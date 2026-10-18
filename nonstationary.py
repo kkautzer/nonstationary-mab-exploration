@@ -1,24 +1,56 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import math
 
-def explore_epsilon_greedy(epsilon: float):
-    return np.random.binomial(n=1, p=epsilon)
+def action_random():
+    return np.random.randint(0, n_arms)
+
+def action_epsilon_greedy(epsilon: float):
+    if np.random.binomial(n=1, p=epsilon):
+        arm = np.random.randint(0, n_arms) # choose which arm to pull at random
+    else:
+        arm = np.argmax(expected_rewards)
+    
+    return arm
+
+def action_ucb():
+    c=2
+    distribution = []
+    for arm in range(len(times_selected)):
+        if times_selected[arm] == 0:
+            return arm
+        distribution.append( expected_rewards[arm] + c*math.sqrt(math.log(i+1) / times_selected[arm]) )
+    
+    return np.argmax(distribution)
+
+def action_gradient_bandit(alpha: float):
+    probs = [v/sum(preferences) for v in preferences]
+    print(preferences)
+    print(probs)
+    arms = list(range(0, n_arms, 1)) #[int(x) for x in np.linspace(0, n_arms-1, num=n_arms)]
+    action = np.random.choice(a=arms, p=probs)
+    # TODO: update preferences here
+
+    return action
 
 # environment setup
-n_arms = 100
+n_arms = 10
 rmin = 0
-rmax = 100
+rmax = 10
 
 # reward and simulation setup
 initial_arm_rewards = np.random.uniform(rmin, rmax, size=n_arms)
 iterations = 1000
 epsilon=0.2
+alpha = 0.1
 mc_sims = 10
 
-exploration_mechanisms = {
-    "Epsilon Greedy": lambda: explore_epsilon_greedy(epsilon),
-    # "UCB": None,
-    # "Thomson Sampling": None
+action_mechanisms = {
+    "Random": lambda: action_random(),
+    "Epsilon Greedy": lambda: action_epsilon_greedy(epsilon),
+    "UCB": lambda: action_ucb(),
+    # "Gradient Bandit": lambda: action_gradient_bandit(alpha)
+
 } # all need to have the same lambda signature
 drift_settings = np.linspace(0, 1, num=21) * rmax
 
@@ -27,7 +59,7 @@ for i in range(mc_sims):
     print(f"iteration {i}")
 
     results = {}
-    for x in exploration_mechanisms.keys():
+    for x in action_mechanisms.keys():
         results[x] = {
             "reward_gained": [],
             "reward_possible": [],
@@ -37,7 +69,7 @@ for i in range(mc_sims):
             "explorations_frac": []
         }
 
-    for explore_name, explore_f in exploration_mechanisms.items():
+    for explore_name, action_f in action_mechanisms.items():
         print(f"\texploration method = {explore_name}")
         for r_variation_potential in sorted(drift_settings):
             print(f"\t\tmax variation = {r_variation_potential}")
@@ -48,19 +80,15 @@ for i in range(mc_sims):
             arm_rewards = initial_arm_rewards
             expected_rewards = [0.0] * n_arms # this should be the same size / shape as arm_rewards
             times_selected = [0] * n_arms # should also be same size/shape as arm_rewards and expected_rewards
+            preferences = [1.0] * n_arms ## used for gradient bandit algorithm
             for i in range(iterations):
                 # use decided exploration mechanism to choose arm to pull
-                explore = explore_f()
-                
-                if explore:
-                    explorations += 1
-                    arm = np.random.randint(0, n_arms) # choose which arm to pull at random
-                else:
-                    arm = np.argmax(expected_rewards)
+                arm = action_f()
 
                 # pull arm and get reward
                 reward = arm_rewards[arm]
                 # update expected reward and times selected
+                # TODO update to be equation 2.6 from Sutton & Barto (p. 32) for nonstationary rewards
                 expected_rewards[arm] = (expected_rewards[arm] * times_selected[arm] + reward) / (times_selected[arm]+1)
                 times_selected[arm] += 1
 
@@ -89,7 +117,7 @@ for explore_name in results.keys():
 # generate figure for results
 fig, ax = plt.subplots()
 
-for explore_name in exploration_mechanisms.keys():
+for explore_name in action_mechanisms.keys():
     plt.plot(drift_settings, results[explore_name]["reward_frac"], label=explore_name)
 
 plt.title("Fraction of Total Possible Reward vs. Allowed Drift Range")
