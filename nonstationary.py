@@ -24,13 +24,8 @@ def action_ucb():
     return np.argmax(distribution)
 
 def action_gradient_bandit(alpha: float):
-    probs = [v/sum(preferences) for v in preferences]
-    print(preferences)
-    print(probs)
-    arms = list(range(0, n_arms, 1)) #[int(x) for x in np.linspace(0, n_arms-1, num=n_arms)]
+    arms = list(range(0, n_arms, 1))
     action = np.random.choice(a=arms, p=probs)
-    # TODO: update preferences here
-
     return action
 
 # environment setup
@@ -40,16 +35,16 @@ rmax = 10
 
 # reward and simulation setup
 initial_arm_rewards = np.random.uniform(rmin, rmax, size=n_arms)
-iterations = 1000
+iterations = 100
 epsilon=0.2
 alpha = 0.1
-mc_sims = 10
+mc_sims = 25
 
 action_mechanisms = {
     "Random": lambda: action_random(),
     "Epsilon Greedy": lambda: action_epsilon_greedy(epsilon),
     "UCB": lambda: action_ucb(),
-    # "Gradient Bandit": lambda: action_gradient_bandit(alpha)
+    "Gradient Bandit": lambda: action_gradient_bandit(alpha)
 
 } # all need to have the same lambda signature
 drift_settings = np.linspace(0, 1, num=21) * rmax
@@ -83,10 +78,21 @@ for i in range(mc_sims):
             preferences = [1.0] * n_arms ## used for gradient bandit algorithm
             for i in range(iterations):
                 # use decided exploration mechanism to choose arm to pull
+                probs = [(math.e**v)/sum([math.e**x for x in preferences]) for v in preferences]
                 arm = action_f()
 
                 # pull arm and get reward
                 reward = arm_rewards[arm]
+
+
+                # update preferences for gradient exploration method
+                for idx, pref in enumerate(preferences):
+                    if idx == arm:
+                        preferences[idx] = preferences[idx] + alpha * (reward - (reward_gained/(i+1))) * (1-probs[idx])
+                    else:
+                        preferences[idx] = preferences[idx] + alpha * (reward - (reward_gained/(i+1))) * (probs[idx])
+
+
                 # update expected reward and times selected
                 # TODO update to be equation 2.6 from Sutton & Barto (p. 32) for nonstationary rewards
                 expected_rewards[arm] = (expected_rewards[arm] * times_selected[arm] + reward) / (times_selected[arm]+1)
