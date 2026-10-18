@@ -47,6 +47,7 @@ for i in range(mc_sims):
             explorations = 0
             arm_rewards = initial_arm_rewards
             expected_rewards = [0.0] * n_arms # this should be the same size / shape as arm_rewards
+            times_selected = [0] * n_arms # should also be same size/shape as arm_rewards and expected_rewards
             for i in range(iterations):
                 # use decided exploration mechanism to choose arm to pull
                 explore = explore_f()
@@ -59,10 +60,10 @@ for i in range(mc_sims):
 
                 # pull arm and get reward
                 reward = arm_rewards[arm]
-                # TODO update the below expected reward calculation
-                # update expected reward with most recent
-                expected_rewards[arm] = reward
-                
+                # update expected reward and times selected
+                expected_rewards[arm] = (expected_rewards[arm] * times_selected[arm] + reward) / (times_selected[arm]+1)
+                times_selected[arm] += 1
+
                 # update total reward
                 reward_gained += reward
                 reward_possible += max(arm_rewards)
@@ -89,7 +90,7 @@ for explore_name in results.keys():
 fig, ax = plt.subplots()
 
 for explore_name in exploration_mechanisms.keys():
-    plt.plot(drift_settings, results[explore_name]["explorations"], label=explore_name)
+    plt.plot(drift_settings, results[explore_name]["reward_frac"], label=explore_name)
 
 plt.title("Fraction of Total Possible Reward vs. Allowed Drift Range")
 plt.xlabel("Maximum Reward Drift Range")
