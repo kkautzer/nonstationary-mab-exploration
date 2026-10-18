@@ -29,6 +29,12 @@ r_variation_potential = 0.1*rmax # maximum amount that a reward can vary by at e
 
 print(f"Reward Range: ({rmin}, {rmax}); Max Drift Per Iteration: {r_variation_potential}")
 
+# TODO: modify to add implementations for different exploration mechanisms, add loop around this for each
+# could define a function for each exploration method that takes in the surrounding context (where necessary) and returns 0/1 whether or not to explore.
+# store list of these functions, iterate these and print the corresponding results for each.
+
+# TODO: sweep across different reward drift conditions. should start with stationary, and increase the maximum reward variation per iteration each time
+# this would likely be the final / intended result for this mini-project
 for i in range(iterations):
     # # print(f"Arm Rewards (i={i}; n={n_arms}): {arm_rewards}")
 
