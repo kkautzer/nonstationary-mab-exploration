@@ -57,6 +57,7 @@ for r_variation_potential in sorted(drift_settings):
             for i in range(len(arm_rewards)):
                 arm_rewards[i] = max(min(arm_rewards[i] + np.random.uniform(-r_variation_potential, r_variation_potential), rmax), rmin) # vary, constrained by rmax and rmin
 
+        # TODO: add summary data to some structure / dictionary object for later results figure
         print(
             f"\n***{explore_name} Exploration***"
             f"\nReward: {reward_gained} of {reward_possible} possible ({reward_gained/reward_possible * 100}%)"
