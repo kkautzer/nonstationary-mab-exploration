@@ -29,16 +29,16 @@ def action_gradient_bandit(alpha: float):
     return action
 
 # environment setup
-n_arms = 10
+n_arms = 50
 rmin = 0
 rmax = 10
 
 # reward and simulation setup
 initial_arm_rewards = np.random.uniform(rmin, rmax, size=n_arms)
-iterations = 100
+iterations = 250
 epsilon=0.2
 alpha = 0.1
-mc_sims = 25
+mc_sims = 50
 
 action_mechanisms = {
     "Random": lambda: action_random(),
@@ -131,6 +131,7 @@ plt.xlabel("Maximum Reward Drift Range")
 plt.ylabel("Fraction of Total Possible Reward")
 plt.legend()
 
+plt.savefig("50arms_250iterations_50mcsims.png")
 plt.show()
 
 plt.close(fig)
