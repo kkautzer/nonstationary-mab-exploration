@@ -61,7 +61,9 @@ for i in range(mc_sims):
             "reward_frac": [],
             "regret": [],
             "explorations": [],
-            "explorations_frac": []
+            "explorations_frac": [],
+            "optimal_choices": [],
+            "optimal_choices_frac": [],
         }
 
     for explore_name, action_f in action_mechanisms.items():
@@ -72,6 +74,7 @@ for i in range(mc_sims):
             reward_gained = 0
             reward_possible = 0
             explorations = 0
+            optimal_choices = 0
             arm_rewards = initial_arm_rewards
             expected_rewards = [0.0] * n_arms # this should be the same size / shape as arm_rewards
             times_selected = [0] * n_arms # should also be same size/shape as arm_rewards and expected_rewards
@@ -101,7 +104,8 @@ for i in range(mc_sims):
                 # update total reward
                 reward_gained += reward
                 reward_possible += max(arm_rewards)
-
+                if reward == max(arm_rewards):
+                    optimal_choices += 1
                 # shift actual rewards at random
                 for i in range(len(arm_rewards)):
                     arm_rewards[i] = max(min(arm_rewards[i] + np.random.uniform(-r_variation_potential, r_variation_potential), rmax), rmin) # vary, constrained by rmax and rmin
@@ -112,6 +116,9 @@ for i in range(mc_sims):
             results[explore_name]["regret"].append(reward_possible - reward_gained)
             results[explore_name]["explorations"].append(explorations)
             results[explore_name]["explorations_frac"].append(explorations/iterations)
+            results[explore_name]["optimal_choices"].append(optimal_choices)
+            results[explore_name]["optimal_choices_frac"].append(optimal_choices/iterations)
+
 
     results_list.append(results)
 
@@ -131,7 +138,22 @@ plt.xlabel("Maximum Reward Drift Range")
 plt.ylabel("Fraction of Total Possible Reward")
 plt.legend()
 
-plt.savefig("50arms_250iterations_50mcsims.png")
+plt.savefig("50arms_250iterations_50mcsims_reward_frac.png")
 plt.show()
 
 plt.close(fig)
+
+fig2, ax = plt.subplots()
+
+for explore_name in action_mechanisms.keys():
+    plt.plot(drift_settings, results[explore_name]["optimal_choices_frac"], label=explore_name)
+
+plt.title("Fraction of Optimal Choices Made vs. Allowed Drift Range")
+plt.xlabel("Maximum Reward Drift Range")
+plt.ylabel("Fraction of Optimal Choices Made")
+plt.legend()
+
+plt.savefig("50arms_250iterations_50mcsims_optimal_choices_frac.png")
+plt.show()
+
+plt.close(fig2)
